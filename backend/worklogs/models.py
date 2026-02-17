@@ -1,9 +1,14 @@
 """
 Work Log model - daily metrics per user per feature per date.
-Feature required; Project optional. assigned_to for admin assignment.
+Feature required; Project optional (TOO or TFA). assigned_to for admin assignment.
 """
 from django.db import models
 from django.conf import settings
+
+PROJECT_CHOICES = [
+    ('TOO', 'TOO'),
+    ('TFA', 'TFA'),
+]
 
 
 class WorkLog(models.Model):
@@ -17,12 +22,12 @@ class WorkLog(models.Model):
         on_delete=models.CASCADE,
         related_name='worklogs',
     )
-    project = models.ForeignKey(
-        'projects.Project',
-        on_delete=models.SET_NULL,
+    project = models.CharField(
+        max_length=10,
+        choices=PROJECT_CHOICES,
         null=True,
         blank=True,
-        related_name='worklogs',
+        db_index=True,
     )
     date = models.DateField()
     # Admin-only: assign work log to a user (e.g. for reassignment)

@@ -1,13 +1,15 @@
 from rest_framework import serializers
-from .models import WorkLog
+from .models import WorkLog, PROJECT_CHOICES
 from .validators import validate_execution_breakdown
 from accounts.validators import sanitize_string
+
+VALID_PROJECTS = {c[0] for c in PROJECT_CHOICES}
 
 
 class WorkLogSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     feature_name = serializers.CharField(source='feature.name', read_only=True)
-    project_name = serializers.CharField(source='project.name', read_only=True, allow_null=True)
+    project_name = serializers.CharField(source='project', read_only=True, allow_null=True)
     assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True, allow_null=True)
 
     class Meta:
@@ -33,6 +35,10 @@ class WorkLogSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and getattr(request.user, 'profile', None) and request.user.profile.role != 'ADMIN':
             data.pop('assigned_to', None)
+        project = data.get('project') if 'project' in data else (getattr(self.instance, 'project', None) if self.instance else None)
+        if not project or project not in VALID_PROJECTS:
+            raise serializers.ValidationError({'project': ['Please select a project (TOO or TFA).']})
+        data['project'] = project
         if data.get('comments') is not None:
             data['comments'] = sanitize_string(data['comments'], max_length=10000)
         if data.get('ticket_number_with_priority') is not None:

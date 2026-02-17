@@ -4,16 +4,20 @@ import { Layout } from '../components/common/Layout';
 import { Loading } from '../components/common/Loading';
 import { worklogsService } from '../services/worklogs';
 import { featuresService } from '../services/features';
-import { projectsApi } from '../api/projects';
 import { authApi } from '../api/auth';
+
+const PROJECT_OPTIONS = [
+  { value: '', label: 'All projects' },
+  { value: 'TOO', label: 'TOO' },
+  { value: 'TFA', label: 'TFA' },
+];
 
 export function FilterWorkLogs() {
   const [worklogs, setWorklogs] = useState([]);
   const [features, setFeatures] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({ date_from: '', date_to: '', user: '', feature: '' });
+  const [filters, setFilters] = useState({ date_from: '', date_to: '', user: '', feature: '', project: '' });
   const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
 
@@ -24,6 +28,7 @@ export function FilterWorkLogs() {
     if (filters.date_to) params.date_to = filters.date_to;
     if (filters.user) params.user = filters.user;
     if (filters.feature) params.feature = filters.feature;
+    if (filters.project) params.project = filters.project;
     worklogsService.filter(params)
       .then((r) => {
         setWorklogs(r.data.results || []);
@@ -35,7 +40,6 @@ export function FilterWorkLogs() {
 
   useEffect(() => {
     featuresService.list().then((r) => setFeatures(r.data.results || [])).catch(() => {});
-    projectsApi.list().then((r) => setProjects(r.data.results || [])).catch(() => {});
     authApi.users().then((r) => setUsers(r.data.results || r.data || [])).catch(() => {});
   }, []);
 
@@ -76,6 +80,14 @@ export function FilterWorkLogs() {
           <option value="">All users</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>{u.username}</option>
+          ))}
+        </select>
+        <select
+          value={filters.project}
+          onChange={(e) => setFilters((f) => ({ ...f, project: e.target.value }))}
+        >
+          {PROJECT_OPTIONS.map((opt) => (
+            <option key={opt.value || 'all'} value={opt.value}>{opt.label}</option>
           ))}
         </select>
         <button type="button" className="btn btn-primary" onClick={loadWorklogs}>Apply</button>

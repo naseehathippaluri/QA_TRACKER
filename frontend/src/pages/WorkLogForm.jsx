@@ -5,8 +5,13 @@ import { Layout } from '../components/common/Layout';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { worklogsService } from '../services/worklogs';
 import { featuresService } from '../services/features';
-import { projectsApi } from '../api/projects';
 import { Loading } from '../components/common/Loading';
+
+const PROJECT_OPTIONS = [
+  { value: '', label: 'Select project' },
+  { value: 'TOO', label: 'TOO' },
+  { value: 'TFA', label: 'TFA' },
+];
 import { useAuth } from '../contexts/AuthContext';
 
 const defaultValues = {
@@ -36,7 +41,6 @@ export function WorkLogForm() {
   const { isAdmin } = useAuth();
   const isEdit = Boolean(id);
   const [features, setFeatures] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitError, setSubmitError] = useState(null);
@@ -47,7 +51,6 @@ export function WorkLogForm() {
   useEffect(() => {
     let cancelled = false;
     featuresService.list().then((r) => !cancelled && setFeatures(r.data.results || [])).catch(() => {});
-    projectsApi.list().then((r) => !cancelled && setProjects(r.data.results || [])).catch(() => {});
     if (isEdit) {
       worklogsService.get(id)
         .then((r) => {
@@ -67,7 +70,7 @@ export function WorkLogForm() {
     const payload = {
       ...data,
       feature: Number(data.feature),
-      project: data.project ? Number(data.project) : null,
+      project: data.project,
       assigned_to: isAdmin && data.assigned_to ? Number(data.assigned_to) : null,
       test_cases_written: Number(data.test_cases_written) || 0,
       test_cases_reviewed: Number(data.test_cases_reviewed) || 0,
@@ -120,13 +123,13 @@ export function WorkLogForm() {
               {errors.feature && <span className="field-error">{errors.feature.message}</span>}
             </div>
             <div className="form-group">
-              <label htmlFor="project">Project (optional)</label>
-              <select id="project" {...register('project')}>
-                <option value="">None</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+              <label htmlFor="project">Project *</label>
+              <select id="project" {...register('project', { required: 'Select a project' })}>
+                {PROJECT_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'none'} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
+              {errors.project && <span className="field-error">{errors.project.message}</span>}
             </div>
           </div>
           <div className="form-group">

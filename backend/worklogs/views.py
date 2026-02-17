@@ -17,7 +17,7 @@ class WorkLogListCreateView(generics.ListCreateAPIView):
     filterset_fields = ['date', 'feature', 'project']
 
     def get_queryset(self):
-        qs = WorkLog.objects.select_related('user', 'feature', 'project', 'assigned_to').order_by('-date')
+        qs = WorkLog.objects.select_related('user', 'feature', 'assigned_to').order_by('-date')
         if getattr(self.request.user, 'profile', None) and self.request.user.profile.role == 'ADMIN':
             return qs
         return qs.filter(user=self.request.user)
@@ -28,7 +28,7 @@ class WorkLogListCreateView(generics.ListCreateAPIView):
 
 class WorkLogAllListView(generics.ListAPIView):
     """Admin: list all work logs."""
-    queryset = WorkLog.objects.all().select_related('user', 'feature', 'project', 'assigned_to').order_by('-date')
+    queryset = WorkLog.objects.all().select_related('user', 'feature', 'assigned_to').order_by('-date')
     serializer_class = WorkLogSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [DjangoFilterBackend]
@@ -43,7 +43,7 @@ class WorkLogFilterView(generics.ListAPIView):
     filterset_fields = ['feature', 'project']
 
     def get_queryset(self):
-        qs = WorkLog.objects.all().select_related('user', 'feature', 'project', 'assigned_to').order_by('-date')
+        qs = WorkLog.objects.all().select_related('user', 'feature', 'assigned_to').order_by('-date')
         if getattr(self.request.user, 'profile', None) and self.request.user.profile.role != 'ADMIN':
             qs = qs.filter(user=self.request.user)
         date_from = self.request.query_params.get('date_from')
@@ -62,6 +62,6 @@ class WorkLogFilterView(generics.ListAPIView):
 
 
 class WorkLogDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = WorkLog.objects.all().select_related('user', 'feature', 'project', 'assigned_to')
+    queryset = WorkLog.objects.all().select_related('user', 'feature', 'assigned_to')
     serializer_class = WorkLogSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]

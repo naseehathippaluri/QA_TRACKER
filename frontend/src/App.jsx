@@ -8,7 +8,6 @@ import { WorkLogForm } from './pages/WorkLogForm';
 import { MyWorkLogs } from './pages/MyWorkLogs';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { FilterWorkLogs } from './pages/FilterWorkLogs';
-import { AdminProjects } from './pages/AdminProjects';
 import { FeaturesPage } from './pages/FeaturesPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import './App.css';
@@ -28,7 +27,6 @@ function App() {
           <Route path="/admin" element={<PrivateRoute requireAdmin><AdminDashboard /></PrivateRoute>} />
           <Route path="/admin/worklogs" element={<PrivateRoute requireAdmin><FilterWorkLogs /></PrivateRoute>} />
           <Route path="/admin/analytics" element={<PrivateRoute requireAdmin><AnalyticsPage /></PrivateRoute>} />
-          <Route path="/admin/projects" element={<PrivateRoute requireAdmin><AdminProjects /></PrivateRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

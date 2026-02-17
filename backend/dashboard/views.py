@@ -116,7 +116,7 @@ class DashboardExportView(APIView):
                 {'detail': 'Excel export requires openpyxl. Install with: pip install openpyxl'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
-        qs = _worklog_queryset(request).select_related('user', 'feature', 'project')
+        qs = _worklog_queryset(request).select_related('user', 'feature')
         qs = qs.order_by('-date', '-created_at')
         wb = Workbook()
         ws = wb.active
@@ -131,7 +131,7 @@ class DashboardExportView(APIView):
             ws.cell(row=row, column=1, value=str(wl.date))
             ws.cell(row=row, column=2, value=wl.user.email or wl.user.username)
             ws.cell(row=row, column=3, value=wl.feature.name)
-            ws.cell(row=row, column=4, value=wl.project.name if wl.project else '')
+            ws.cell(row=row, column=4, value=wl.project or '')
             ws.cell(row=row, column=5, value=wl.test_cases_written)
             ws.cell(row=row, column=6, value=wl.test_cases_executed)
             ws.cell(row=row, column=7, value=wl.test_cases_passed)

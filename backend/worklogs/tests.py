@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from features.models import Feature
-from projects.models import Project
 from accounts.models import UserProfile
 from .models import WorkLog
 
@@ -17,7 +16,6 @@ class WorkLogAPITest(TestCase):
         self.user = User.objects.create_user(username='qa1', email='qa1@test.com', password='SecurePass1!')
         UserProfile.objects.create(user=self.user, role='QA_MEMBER')
         self.feature = Feature.objects.create(name='Feature A')
-        self.project = Project.objects.create(name='Proj A', status='active')
 
     def _login(self, email='qa1@test.com', password='SecurePass1!'):
         r = self.client.post('/api/auth/login', {'email': email, 'password': password}, format='json')
