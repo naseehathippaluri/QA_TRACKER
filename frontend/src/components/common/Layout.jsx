@@ -31,20 +31,17 @@ export function Layout({ children }) {
         <Link to="/dashboard" className="logo">QA Daily Tracker</Link>
         <nav className="nav">
           <Link to="/dashboard">Dashboard</Link>
-          <Link to="/worklogs">Work Log Reports</Link>
           <Link to="/worklogs/new">Create Work Log</Link>
           <Link to="/features">Features</Link>
-          {isAdmin && (
-            <>
-              <Link to="/admin">Admin</Link>
-              <Link to="/admin/worklogs">All Work Logs</Link>
-              <Link to="/admin/analytics">Analytics</Link>
-            </>
-          )}
+          <Link to="/worklogs">All Work Logs</Link>
+          {isAdmin && <Link to="/admin/analytics">Analytics</Link>}
           {user && (
-            <span className="user-name" title={user.email}>
-              <UserIcon />
-              {user.full_name?.trim() || user.email}
+            <span className="user-name-wrap">
+              <span className="user-name" title={user.email}>
+                <UserIcon />
+                {user.full_name?.trim() || user.email}
+              </span>
+              {isAdmin && <span className="user-role">Admin</span>}
             </span>
           )}
           <button type="button" className="btn btn-ghost btn-logout" onClick={handleLogout}>

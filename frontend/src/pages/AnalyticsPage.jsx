@@ -1,250 +1,122 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
 import { Layout } from '../components/common/Layout';
 import { Loading } from '../components/common/Loading';
+import { AnalyticsPieChart } from '../components/charts/AnalyticsPieChart';
 import { dashboardService } from '../services/dashboard';
-import { featuresService } from '../services/features';
-import { authApi } from '../api/auth';
+
+function getCurrentMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return {
+    date_from: start.toISOString().slice(0, 10),
+    date_to: end.toISOString().slice(0, 10),
+  };
+}
+
+const CHART_1_COLORS = { 'Test Cases Written': '#3B82F6', 'Test Cases Executed': '#6366F1' };
+const CHART_2_COLORS = { Passed: '#22C55E', Failed: '#EF4444' };
+const CHART_3_COLORS = { 'Defects Raised': '#F97316' };
 
 export function AnalyticsPage() {
+  const defaultRange = getCurrentMonthRange();
+  const [dateFrom, setDateFrom] = useState(defaultRange.date_from);
+  const [dateTo, setDateTo] = useState(defaultRange.date_to);
+  const [appliedRange, setAppliedRange] = useState(defaultRange);
   const [data, setData] = useState(null);
-  const [features, setFeatures] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ date_from: '', date_to: '', feature: '', user: '' });
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    featuresService.list().then((r) => {
-      const data = r.data;
-      setFeatures(Array.isArray(data) ? data : (data?.results || []));
-    }).catch(() => {});
-    authApi.users().then((r) => setUsers(r.data.results || [])).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const params = {};
-    if (filters.date_from) params.date_from = filters.date_from;
-    if (filters.date_to) params.date_to = filters.date_to;
-    if (filters.feature) params.feature = filters.feature;
-    if (filters.user) params.user = filters.user;
+  const fetchAnalytics = useCallback(() => {
     setLoading(true);
-    dashboardService.analytics(params)
+    setError(null);
+    const params = {
+      date_from: appliedRange.date_from,
+      date_to: appliedRange.date_to,
+    };
+    dashboardService
+      .analyticsSummary(params)
       .then((r) => setData(r.data))
-      .catch(() => setData(null))
+      .catch((err) => {
+        setError(err.response?.data?.detail || 'Failed to load analytics');
+        setData(null);
+      })
       .finally(() => setLoading(false));
-  }, [filters]);
+  }, [appliedRange.date_from, appliedRange.date_to]);
 
-  if (loading && !data) return <Layout><Loading /></Layout>;
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
-  const defectsTrend = data?.defects_trend || [];
-  const tce = data?.test_cases_executed || [];
-  const tcw = data?.test_cases_written || [];
-  const jira = data?.jira_tickets_raised || [];
-  const hasAnyData = defectsTrend.length > 0 || tce.length > 0 || tcw.length > 0 || jira.length > 0;
+  const handleApply = (e) => {
+    e.preventDefault();
+    setAppliedRange({ date_from: dateFrom, date_to: dateTo });
+  };
 
-  // Pie chart data: { name, value } for each slice; show number on label
-  const toPieData = (arr) => arr.map((d) => ({ name: d.date, value: d.count }));
-  const PIE_COLORS = ['#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#ca8a04', '#db2777'];
+  const chart1Data = [
+    { name: 'Test Cases Written', value: data?.written ?? 0 },
+    { name: 'Test Cases Executed', value: data?.executed ?? 0 },
+  ];
+  const chart2Data = [
+    { name: 'Passed', value: data?.passed ?? 0 },
+    { name: 'Failed', value: data?.failed ?? 0 },
+  ];
+  const chart3Data = [{ name: 'Defects Raised', value: data?.defects ?? 0 }];
+
+  const hasAnyData = (data?.written ?? 0) + (data?.executed ?? 0) + (data?.passed ?? 0) + (data?.failed ?? 0) + (data?.defects ?? 0) > 0;
 
   return (
     <Layout>
       <div className="page-header">
-        <h1>Reports Analytics</h1>
-        <Link to="/admin" className="btn btn-secondary">Back to Admin</Link>
-      </div>
-      <div className="filter-bar">
-        <input
-          type="date"
-          value={filters.date_from}
-          onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))}
-          placeholder="From"
-        />
-        <input
-          type="date"
-          value={filters.date_to}
-          onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))}
-          placeholder="To"
-        />
-        <select value={filters.feature} onChange={(e) => setFilters((f) => ({ ...f, feature: e.target.value }))}>
-          <option value="">All features</option>
-          {features.map((f) => (
-            <option key={f.id} value={f.id}>{f.name}</option>
-          ))}
-        </select>
-        <select value={filters.user} onChange={(e) => setFilters((f) => ({ ...f, user: e.target.value }))}>
-          <option value="">All users</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>{u.full_name || u.email || `User ${u.id}`}</option>
-          ))}
-        </select>
+        <h1>Analytics</h1>
+        <Link to="/dashboard" className="btn btn-secondary">Back to Dashboard</Link>
       </div>
 
-      <div className="charts-grid">
-        <div className="chart-card">
-          <h3>Defects Trend</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={defectsTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="count" name="Defects" stroke="#dc2626" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+      <form className="analytics-filters filter-bar dashboard-filters" onSubmit={handleApply}>
+        <div className="filter-group">
+          <label htmlFor="analytics-start-date">Start Date</label>
+          <input
+            id="analytics-start-date"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
         </div>
-        <div className="chart-card">
-          <h3>Test Cases Executed (TCE)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={tce} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="count" name="Executed" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="filter-group">
+          <label htmlFor="analytics-end-date">End Date</label>
+          <input
+            id="analytics-end-date"
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
         </div>
-        <div className="chart-card">
-          <h3>Test Cases Written (TCW)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={tcw} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="count" name="Written" stroke="#16a34a" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="filter-group" style={{ alignSelf: 'flex-end' }}>
+          <button type="submit" className="btn btn-primary">
+            Apply
+          </button>
         </div>
-        <div className="chart-card">
-          <h3>JIRA / Tickets Raised</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={jira} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="count" name="Tickets" stroke="#d97706" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      </form>
 
-      {hasAnyData && (
+      {error && <div className="error-message">{error}</div>}
+
+      {loading ? (
+        <Loading />
+      ) : !hasAnyData ? (
+        <div className="analytics-empty muted">
+          No data for the selected date range. Adjust dates or add work logs.
+        </div>
+      ) : (
         <>
-          <h2 className="charts-section-title">Summary by date (pie)</h2>
-          <div className="charts-grid">
-            <div className="chart-card">
-              <h3>Defects</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={toPieData(defectsTrend)}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine
-                  >
-                    {toPieData(defectsTrend).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [value, 'Count']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="chart-card">
-              <h3>Test Cases Executed</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={toPieData(tce)}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine
-                  >
-                    {toPieData(tce).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [value, 'Count']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="chart-card">
-              <h3>Test Cases Written</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={toPieData(tcw)}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine
-                  >
-                    {toPieData(tcw).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [value, 'Count']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="chart-card">
-              <h3>JIRA / Tickets</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={toPieData(jira)}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine
-                  >
-                    {toPieData(jira).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [value, 'Count']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="analytics-charts-row">
+            <AnalyticsPieChart title="Test Case Creation" data={chart1Data} colorMapping={CHART_1_COLORS} />
+            <AnalyticsPieChart title="Execution Results" data={chart2Data} colorMapping={CHART_2_COLORS} />
+          </div>
+          <div className="analytics-charts-row analytics-charts-row-single">
+            <AnalyticsPieChart title="Defects Raised" data={chart3Data} colorMapping={CHART_3_COLORS} />
           </div>
         </>
-      )}
-
-      {!loading && (!data || !hasAnyData) && (
-        <p className="muted">No analytics data for the selected filters. Create work logs to see charts.</p>
       )}
     </Layout>
   );

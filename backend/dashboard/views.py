@@ -104,6 +104,32 @@ class DashboardAnalyticsView(APIView):
         })
 
 
+class DashboardAnalyticsSummaryView(APIView):
+    """
+    GET /api/dashboard/analytics/summary - Aggregated totals for Analytics pie charts (Admin only).
+    Query params: date_from, date_to (optional: user).
+    Returns: written, executed, passed, failed, defects.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        qs = _worklog_queryset(request)
+        agg = qs.aggregate(
+            written=Sum('test_cases_written'),
+            executed=Sum('test_cases_executed'),
+            passed=Sum('test_cases_passed'),
+            failed=Sum('test_cases_failed'),
+            defects=Sum('defects_raised'),
+        )
+        return Response({
+            'written': agg['written'] or 0,
+            'executed': agg['executed'] or 0,
+            'passed': agg['passed'] or 0,
+            'failed': agg['failed'] or 0,
+            'defects': agg['defects'] or 0,
+        })
+
+
 class DashboardExportView(APIView):
     """GET /api/dashboard/export - Excel export of work logs (Admin only). Optional: date_from, date_to, feature, user."""
     permission_classes = [IsAuthenticated, IsAdminUser]

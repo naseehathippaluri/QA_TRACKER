@@ -102,7 +102,20 @@ export function WorkLogForm() {
       navigate('/worklogs');
     } catch (err) {
       const d = err.response?.data;
-      setSubmitError(d?.errors?.non_field_errors?.[0] || d?.detail || 'Save failed');
+      let msg = 'Save failed';
+      if (d) {
+        if (d.non_field_errors?.length) msg = d.non_field_errors[0];
+        else if (typeof d.detail === 'string') msg = d.detail;
+        else if (Array.isArray(d.detail) && d.detail.length) msg = d.detail[0];
+        else if (d.project?.length) msg = d.project[0];
+        else if (d.feature?.length) msg = d.feature[0];
+        else if (d.date?.length) msg = d.date[0];
+        else {
+          const firstKey = Object.keys(d).find((k) => Array.isArray(d[k]) && d[k].length);
+          if (firstKey) msg = d[firstKey][0];
+        }
+      }
+      setSubmitError(msg);
     } finally {
       setSubmitting(false);
     }
