@@ -44,15 +44,16 @@ class WorkLogSerializer(serializers.ModelSerializer):
             data['ticket_number_with_priority'] = sanitize_string(data['ticket_number_with_priority'], max_length=500)
         validate_execution_breakdown(data)
         user = request.user
+        project = data.get('project')
         feature = data.get('feature') or (self.instance and self.instance.feature)
         date = data.get('date') or (self.instance and self.instance.date)
-        if not feature or not date:
+        if not all([project, feature, date]):
             return data
-        qs = WorkLog.objects.filter(user=user, feature=feature, date=date)
+        qs = WorkLog.objects.filter(user=user, project=project, feature=feature, date=date)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
             raise serializers.ValidationError(
-                {'non_field_errors': ['A work log for this user and feature on this date already exists.']}
+                {'non_field_errors': ['A work log for this user, project, and feature on this date already exists.']}
             )
         return data

@@ -12,8 +12,10 @@ def validate_execution_breakdown(data):
     invalid = data.get('test_cases_invalid', 0) or 0
     total = passed + failed + blocked + in_progress + future_execution + invalid
     if total > executed:
-        raise serializers.ValidationError(
-            'Sum of passed, failed, blocked, in_progress, future_execution and invalid '
-            'must not exceed test_cases_executed.'
-        )
+        raise serializers.ValidationError({
+            'non_field_errors': [
+                'Sum of passed, failed, blocked, in progress, future execution and invalid '
+                'must not exceed test cases executed.'
+            ]
+        })
     return data

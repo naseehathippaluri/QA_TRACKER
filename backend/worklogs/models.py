@@ -1,6 +1,6 @@
 """
-Work Log model - daily metrics per user per feature per date.
-Feature required; Project optional (TOO or TFA).
+Work Log model - daily metrics per user per feature per date per project.
+Feature and project required. Uniqueness: (user, project, feature, date).
 """
 from django.db import models
 from django.conf import settings
@@ -27,8 +27,8 @@ class WorkLog(models.Model):
     project = models.CharField(
         max_length=10,
         choices=PROJECT_CHOICES,
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         db_index=True,
     )
     date = models.DateField()
@@ -62,8 +62,8 @@ class WorkLog(models.Model):
         ordering = ['-date', '-created_at']
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'feature', 'date'],
-                name='unique_user_feature_date',
+                fields=['user', 'project', 'feature', 'date'],
+                name='unique_user_project_feature_date',
             )
         ]
         indexes = [
