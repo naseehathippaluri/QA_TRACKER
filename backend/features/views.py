@@ -8,6 +8,7 @@ class FeatureListCreateView(generics.ListCreateAPIView):
     queryset = Feature.objects.all().select_related('created_by').order_by('name')
     serializer_class = FeatureSerializer
     permission_classes = [IsFeatureAdminOrReadOnly]
+    pagination_class = None  # Return all features so every user sees the full list
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

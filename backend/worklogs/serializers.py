@@ -10,13 +10,12 @@ class WorkLogSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     feature_name = serializers.CharField(source='feature.name', read_only=True)
     project_name = serializers.CharField(source='project', read_only=True, allow_null=True)
-    assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True, allow_null=True)
 
     class Meta:
         model = WorkLog
         fields = (
             'id', 'user', 'user_username', 'feature', 'feature_name', 'project', 'project_name',
-            'date', 'assigned_to', 'assigned_to_username',
+            'date',
             'test_cases_written', 'test_cases_reviewed', 'test_cases_executed',
             'test_cases_passed', 'test_cases_failed', 'test_cases_blocked',
             'test_cases_in_progress', 'test_cases_future_execution', 'test_cases_invalid',
@@ -27,14 +26,14 @@ class WorkLogSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         )
         read_only_fields = (
-            'id', 'user', 'user_username', 'feature_name', 'project_name', 'assigned_to_username',
+            'id', 'user', 'user_username', 'feature_name', 'project_name',
             'created_at', 'updated_at',
         )
 
     def validate(self, data):
         request = self.context.get('request')
-        if request and getattr(request.user, 'profile', None) and request.user.profile.role != 'ADMIN':
-            data.pop('assigned_to', None)
+        if not request:
+            return data
         project = data.get('project') if 'project' in data else (getattr(self.instance, 'project', None) if self.instance else None)
         if not project or project not in VALID_PROJECTS:
             raise serializers.ValidationError({'project': ['Please select a project (TOO or TFA).']})

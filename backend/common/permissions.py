@@ -2,6 +2,7 @@
 Shared permission classes for role-based access.
 """
 from rest_framework import permissions
+from rest_framework.exceptions import PermissionDenied
 
 
 def _get_user_role(user):
@@ -26,8 +27,10 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if not request.user or not request.user.is_authenticated:
-            return False
+            raise PermissionDenied()
         if _get_user_role(request.user) == 'ADMIN':
             return True
         owner = getattr(obj, 'user', None)
-        return owner == request.user
+        if owner != request.user:
+            raise PermissionDenied()
+        return True

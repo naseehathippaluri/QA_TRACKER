@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Layout } from '../components/common/Layout';
 import { Loading } from '../components/common/Loading';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { featuresService } from '../services/features';
-import { useAuth } from '../contexts/AuthContext';
 
 export function FeaturesPage() {
-  const { isAdmin } = useAuth();
-  const navigate = useNavigate();
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,7 +17,10 @@ export function FeaturesPage() {
   const loadFeatures = () => {
     setLoading(true);
     featuresService.list()
-      .then((r) => setFeatures(r.data.results || []))
+      .then((r) => {
+        const data = r.data;
+        setFeatures(Array.isArray(data) ? data : (data?.results || []));
+      })
       .catch((err) => setError(err.response?.data?.detail || 'Failed to load features'))
       .finally(() => setLoading(false));
   };
@@ -29,7 +28,6 @@ export function FeaturesPage() {
   useEffect(() => loadFeatures(), []);
 
   const onSubmit = async (data) => {
-    if (!isAdmin) return;
     setSubmitError(null);
     setSubmitting(true);
     try {
@@ -54,30 +52,28 @@ export function FeaturesPage() {
       {error && <ErrorMessage error={error} onDismiss={() => setError(null)} />}
       {submitError && <ErrorMessage error={submitError} onDismiss={() => setSubmitError(null)} />}
 
-      {isAdmin && (
-        <div className="form-card">
-          <h2>Create feature</h2>
-          <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="name">Feature name *</label>
-              <input
-                id="name"
-                type="text"
-                placeholder="e.g. Login flow"
-                {...register('name', { required: 'Required' })}
-              />
-              {errors.name && <span className="field-error">{errors.name.message}</span>}
-            </div>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Creating…' : 'Create feature'}
-            </button>
-          </form>
-        </div>
-      )}
+      <div className="form-card">
+        <h2>Create feature</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="name">Feature name *</label>
+            <input
+              id="name"
+              type="text"
+              placeholder="e.g. Login flow"
+              {...register('name', { required: 'Required' })}
+            />
+            {errors.name && <span className="field-error">{errors.name.message}</span>}
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'Creating…' : 'Create feature'}
+          </button>
+        </form>
+      </div>
 
       <h2 className="section-title">All features</h2>
       {features.length === 0 ? (
-        <p className="muted">No features yet. {isAdmin && 'Create one above to use in work logs.'}</p>
+        <p className="muted">No features yet. Create one above to use in work logs.</p>
       ) : (
         <div className="table-wrap">
           <table className="data-table">

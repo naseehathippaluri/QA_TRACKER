@@ -8,4 +8,4 @@ class WorkLogAdmin(admin.ModelAdmin):
     list_filter = ('date', 'feature', 'project', 'user')
     search_fields = ('user__username', 'feature__name', 'comments')
     date_hierarchy = 'date'
-    raw_id_fields = ('user', 'feature', 'assigned_to')
+    raw_id_fields = ('user', 'feature')

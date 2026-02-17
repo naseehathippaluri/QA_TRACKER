@@ -27,7 +27,10 @@ export function AnalyticsPage() {
   const [filters, setFilters] = useState({ date_from: '', date_to: '', feature: '', user: '' });
 
   useEffect(() => {
-    featuresService.list().then((r) => setFeatures(r.data.results || [])).catch(() => {});
+    featuresService.list().then((r) => {
+      const data = r.data;
+      setFeatures(Array.isArray(data) ? data : (data?.results || []));
+    }).catch(() => {});
     authApi.users().then((r) => setUsers(r.data.results || [])).catch(() => {});
   }, []);
 

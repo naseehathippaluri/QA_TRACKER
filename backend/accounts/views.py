@@ -107,4 +107,3 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserBriefSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-

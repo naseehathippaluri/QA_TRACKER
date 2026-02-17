@@ -12,7 +12,6 @@ const PROJECT_OPTIONS = [
   { value: 'TOO', label: 'TOO' },
   { value: 'TFA', label: 'TFA' },
 ];
-import { useAuth } from '../contexts/AuthContext';
 
 const defaultValues = {
   feature: '',
@@ -32,16 +31,13 @@ const defaultValues = {
   ticket_number_with_priority: '',
   observations_found: 0,
   comments: '',
-  assigned_to: '',
 };
 
 export function WorkLogForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
   const isEdit = Boolean(id);
   const [features, setFeatures] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -50,11 +46,23 @@ export function WorkLogForm() {
 
   useEffect(() => {
     let cancelled = false;
-    featuresService.list().then((r) => !cancelled && setFeatures(r.data.results || [])).catch(() => {});
+    featuresService.list().then((r) => {
+      const data = r.data;
+      if (!cancelled) setFeatures(Array.isArray(data) ? data : (data?.results || []));
+    }).catch(() => {});
+
     if (isEdit) {
-      worklogsService.get(id)
+      worklogsService
+        .get(id)
         .then((r) => {
-          if (!cancelled) reset({ ...defaultValues, ...r.data });
+          if (!cancelled) {
+            const d = r.data;
+            reset({
+              ...defaultValues,
+              ...d,
+              date: d.date || defaultValues.date,
+            });
+          }
         })
         .catch(() => {})
         .finally(() => !cancelled && setLoading(false));
@@ -62,7 +70,7 @@ export function WorkLogForm() {
       setLoading(false);
     }
     return () => { cancelled = true; };
-  }, [id, isEdit, reset]);
+  }, [id, isEdit]);
 
   const onSubmit = async (data) => {
     setSubmitError(null);
@@ -71,7 +79,7 @@ export function WorkLogForm() {
       ...data,
       feature: Number(data.feature),
       project: data.project,
-      assigned_to: isAdmin && data.assigned_to ? Number(data.assigned_to) : null,
+      date: data.date,
       test_cases_written: Number(data.test_cases_written) || 0,
       test_cases_reviewed: Number(data.test_cases_reviewed) || 0,
       test_cases_executed: Number(data.test_cases_executed) || 0,
@@ -137,15 +145,6 @@ export function WorkLogForm() {
             <input id="date" type="date" {...register('date', { required: 'Required' })} />
             {errors.date && <span className="field-error">{errors.date.message}</span>}
           </div>
-          {isAdmin && (
-            <div className="form-group">
-              <label htmlFor="assigned_to">Assigned to (optional)</label>
-              <select id="assigned_to" {...register('assigned_to')}>
-                <option value="">—</option>
-                {/* User list could be from API; for now leave empty or add users endpoint */}
-              </select>
-            </div>
-          )}
         </section>
 
         <section className="form-section">
