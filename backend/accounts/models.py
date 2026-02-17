@@ -7,6 +7,8 @@ from django.conf import settings
 
 
 class UserProfile(models.Model):
+    objects = models.Manager()
+
     ROLE_QA_MEMBER = 'QA_MEMBER'
     ROLE_ADMIN = 'ADMIN'
     ROLE_CHOICES = [
@@ -24,5 +26,6 @@ class UserProfile(models.Model):
     class Meta:
         db_table = 'accounts_userprofile'
 
-    def __str__(self):
-        return f'{self.user.email} ({self.role})'
+    def __str__(self) -> str:
+        username = getattr(self.user, 'username', '')
+        return f'{username} ({self.role})'

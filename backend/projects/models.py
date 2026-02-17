@@ -5,6 +5,8 @@ from django.db import models
 
 
 class Project(models.Model):
+    objects = models.Manager()
+
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('inactive', 'Inactive'),
@@ -24,5 +26,5 @@ class Project(models.Model):
             models.Index(fields=['status']),
         ]
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return str(self.name)

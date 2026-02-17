@@ -6,6 +6,8 @@ from django.conf import settings
 
 
 class QAReport(models.Model):
+    objects = models.Manager()
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -58,5 +60,7 @@ class QAReport(models.Model):
             models.Index(fields=['date']),
         ]
 
-    def __str__(self):
-        return f'Report {self.id} - {self.user.username} - {self.project.name} - {self.date}'
+    def __str__(self) -> str:
+        username = getattr(self.user, 'username', '')
+        project_name = getattr(self.project, 'name', '')
+        return f'Report {self.id} - {username} - {project_name} - {self.date}'

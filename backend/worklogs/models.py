@@ -12,6 +12,8 @@ PROJECT_CHOICES = [
 
 
 class WorkLog(models.Model):
+    objects = models.Manager()
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -78,5 +80,7 @@ class WorkLog(models.Model):
             models.Index(fields=['date']),
         ]
 
-    def __str__(self):
-        return f'WorkLog {self.id} - {self.user.username} - {self.feature.name} - {self.date}'
+    def __str__(self) -> str:
+        username = getattr(self.user, 'username', '')
+        feature_name = getattr(self.feature, 'name', '')
+        return f'WorkLog {self.id} - {username} - {feature_name} - {self.date}'

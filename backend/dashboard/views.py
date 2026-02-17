@@ -129,8 +129,9 @@ class DashboardExportView(APIView):
             ws.cell(row=1, column=col, value=h)
         for row, wl in enumerate(qs, 2):
             ws.cell(row=row, column=1, value=str(wl.date))
-            ws.cell(row=row, column=2, value=wl.user.email or wl.user.username)
-            ws.cell(row=row, column=3, value=wl.feature.name)
+            user_email = getattr(wl.user, 'email', '') or getattr(wl.user, 'username', '')
+            ws.cell(row=row, column=2, value=user_email)
+            ws.cell(row=row, column=3, value=getattr(wl.feature, 'name', ''))
             ws.cell(row=row, column=4, value=wl.project or '')
             ws.cell(row=row, column=5, value=wl.test_cases_written)
             ws.cell(row=row, column=6, value=wl.test_cases_executed)

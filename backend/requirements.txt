@@ -18,3 +18,7 @@ openpyxl>=3.1.0
 
 # Production server (optional for Render)
 gunicorn>=21.0.0
+
+# Type checking (optional, for IDE / pyright)
+django-stubs>=5.0
+djangorestframework-stubs>=3.14

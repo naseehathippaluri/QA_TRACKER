@@ -6,6 +6,8 @@ from django.conf import settings
 
 
 class Feature(models.Model):
+    objects = models.Manager()
+
     name = models.CharField(max_length=255, unique=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -20,5 +22,5 @@ class Feature(models.Model):
         db_table = 'features_feature'
         ordering = ['name']
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return str(self.name)
