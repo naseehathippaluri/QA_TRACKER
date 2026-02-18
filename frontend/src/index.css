@@ -24,8 +24,10 @@
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* Soft background: white + light blue/grey tint (brand colours, not pure white) */
+  background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 35%, #eff6ff 70%, #fef3f0 100%);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
@@ -59,29 +61,74 @@ a:hover {
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   font-weight: 700;
   font-size: 1.25rem;
+  letter-spacing: -0.02em;
   color: var(--nav-text);
   text-decoration: none;
 }
 .logo:hover {
   text-decoration: none;
-  color: rgba(255,255,255,0.9);
+  color: rgba(255,255,255,0.95);
+}
+.logo-text {
+  color: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+.logo-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  flex-shrink: 0;
+}
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
 
+/* Nav items: professional font, interactable pill-style links */
 .nav a {
-  color: rgba(255,255,255,0.9);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(255,255,255,0.95);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 .nav a:hover {
+  background: rgba(255,255,255,0.15);
   color: white;
   text-decoration: none;
+}
+.nav a:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.8);
+  outline-offset: 2px;
+}
+.nav a.active {
+  background: rgba(255,255,255,0.2);
+  color: white;
 }
 
 .nav-icon {
@@ -129,10 +176,40 @@ a:hover {
 
 .main {
   flex: 1;
-  padding: 1.5rem;
+  position: relative;
+  min-height: calc(100vh - 56px);
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* App background watermark: disabled "ideyaLabs" text, light grey, behind all content */
+.app-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.app-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(5rem, 18vw, 12rem);
+  font-weight: 700;
+  color: #94a3b8;
+  opacity: 0.06;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+  user-select: none;
+}
+
+.main-content {
+  position: relative;
+  z-index: 1;
+  padding: 1.5rem;
 }
 
 /* Buttons */
@@ -157,6 +234,14 @@ a:hover {
   background: var(--primary-hover);
 }
 
+.btn-medium {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  width: auto;
+  min-width: unset;
+  align-self: flex-start;
+}
+
 .btn-secondary {
   background: var(--bg-input);
   color: var(--text);
@@ -164,6 +249,18 @@ a:hover {
 }
 .btn-secondary:hover:not(:disabled) {
   background: var(--border);
+}
+
+.btn-excel {
+  background: #16a34a;
+  color: white;
+  gap: 0.4rem;
+}
+.btn-excel:hover:not(:disabled) {
+  background: #15803d;
+}
+.btn-excel-icon {
+  flex-shrink: 0;
 }
 
 .btn-ghost {

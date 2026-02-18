@@ -1,5 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import logoUrl from '../../assets/logo.png';
 
 const UserIcon = () => (
   <svg className="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -28,13 +29,18 @@ export function Layout({ children }) {
   return (
     <div className="layout">
       <header className="header">
-        <Link to="/dashboard" className="logo">QA Daily Tracker</Link>
+        <Link to="/dashboard" className="logo">
+          <span className="logo-circle">
+            <img src={logoUrl} alt="" className="logo-img" />
+          </span>
+          <span className="logo-text">QA Daily Tracker</span>
+        </Link>
         <nav className="nav">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/worklogs/new">Create Work Log</Link>
-          <Link to="/features">Features</Link>
-          <Link to="/worklogs">All Work Logs</Link>
-          {isAdmin && <Link to="/admin/analytics">Analytics</Link>}
+          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')} end>Dashboard</NavLink>
+          <NavLink to="/worklogs/new" className={({ isActive }) => (isActive ? 'active' : '')}>Create Work Log</NavLink>
+          <NavLink to="/features" className={({ isActive }) => (isActive ? 'active' : '')} end>Features</NavLink>
+          <NavLink to="/worklogs" className={({ isActive }) => (isActive ? 'active' : '')} end>All Work Logs</NavLink>
+          {isAdmin && <NavLink to="/admin/analytics" className={({ isActive }) => (isActive ? 'active' : '')} end>Analytics</NavLink>}
           {user && (
             <span className="user-name-wrap">
               <span className="user-name" title={user.email}>
@@ -50,7 +56,12 @@ export function Layout({ children }) {
           </button>
         </nav>
       </header>
-      <main className="main">{children}</main>
+      <main className="main">
+        <div className="app-bg" aria-hidden="true">
+          <span className="app-watermark">ideyaLabs</span>
+        </div>
+        <div className="main-content">{children}</div>
+      </main>
     </div>
   );
 }

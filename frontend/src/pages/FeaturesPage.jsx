@@ -65,7 +65,7 @@ export function FeaturesPage() {
             />
             {errors.name && <span className="field-error">{errors.name.message}</span>}
           </div>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
+          <button type="submit" className="btn btn-primary btn-medium" disabled={submitting}>
             {submitting ? 'Creating…' : 'Create feature'}
           </button>
         </form>

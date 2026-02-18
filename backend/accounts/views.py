@@ -115,9 +115,10 @@ class LogoutView(generics.GenericAPIView):
 
 
 class UserListView(generics.ListAPIView):
-    """GET /api/auth/users/ - List users (Admin only, for filter dropdowns)."""
+    """GET /api/auth/users/ - List users (Admin only, for filter dropdowns). Excludes superusers."""
     from django.contrib.auth import get_user_model
-    queryset = get_user_model().objects.all().order_by('email')
+    User = get_user_model()
+    queryset = User.objects.filter(is_superuser=False).order_by('email')
     serializer_class = UserBriefSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
 

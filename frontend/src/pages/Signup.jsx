@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { ErrorMessage } from '../components/common/ErrorMessage';
+import { AuthLayout } from '../components/common/AuthLayout';
 import { isCompanyEmail, COMPANY_EMAIL_MESSAGE } from '../utils/emailDomain';
 
 export function Signup() {
@@ -10,8 +11,7 @@ export function Signup() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState(null);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm();
-  const password = watch('password');
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   if (isAuthenticated) {
     navigate('/dashboard', { replace: true });
@@ -25,12 +25,11 @@ export function Signup() {
     const d = err.response.data;
     if (typeof d === 'string') return d;
     if (d?.detail) return d.detail;
-    // DRF validation: { "username": ["msg"], "email": ["msg"] } or { "errors": { ... } }
-    const errors = d?.errors || d;
+    const errs = d?.errors || d;
     const messages = [];
-    if (errors && typeof errors === 'object') {
+    if (errs && typeof errs === 'object') {
       for (const key of ['email', 'full_name', 'password', 'non_field_errors']) {
-        const val = errors[key];
+        const val = errs[key];
         if (Array.isArray(val)) messages.push(...val);
         else if (val) messages.push(val);
       }
@@ -53,55 +52,53 @@ export function Signup() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card auth-card-wide">
-        <h1>Create account</h1>
-        <p className="auth-subtitle">QA Daily Tracker</p>
-        <ErrorMessage error={apiError} onDismiss={() => setApiError(null)} />
-        <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register('email', {
-                required: 'Email is required',
-                validate: (v) => isCompanyEmail(v) || COMPANY_EMAIL_MESSAGE,
-              })}
-            />
-            <span className="form-hint">Only company email (@ideyalabs.com) allowed</span>
-            {errors.email && <span className="field-error">{errors.email.message}</span>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="full_name">Full name</label>
-            <input
-              id="full_name"
-              type="text"
-              autoComplete="name"
-              {...register('full_name', { required: 'Full name is required' })}
-            />
-            {errors.full_name && <span className="field-error">{errors.full_name.message}</span>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...register('password', {
-                required: 'Required',
-                minLength: { value: 8, message: 'Min 8 characters; include upper, lower, number, and special character' },
-              })}
-            />
-            {errors.password && <span className="field-error">{errors.password.message}</span>}
-          </div>
-          <button type="submit" className="btn btn-primary btn-block">Sign up</button>
-        </form>
-        <p className="auth-footer">
-          Already have an account? <Link to="/login">Sign in</Link>
-        </p>
-      </div>
-    </div>
+    <AuthLayout title="Create account" subtitle="QA Daily Tracker" wide>
+      <ErrorMessage error={apiError} onDismiss={() => setApiError(null)} />
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            {...register('email', {
+              required: 'Email is required',
+              validate: (v) => isCompanyEmail(v) || COMPANY_EMAIL_MESSAGE,
+            })}
+          />
+          <span className="form-hint">Only company email (@ideyalabs.com) allowed</span>
+          {errors.email && <span className="field-error">{errors.email.message}</span>}
+        </div>
+        <div className="form-group">
+          <label htmlFor="full_name">Full name</label>
+          <input
+            id="full_name"
+            type="text"
+            autoComplete="name"
+            {...register('full_name', { required: 'Full name is required' })}
+          />
+          {errors.full_name && <span className="field-error">{errors.full_name.message}</span>}
+        </div>
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            {...register('password', {
+              required: 'Required',
+              minLength: { value: 8, message: 'Min 8 characters; include upper, lower, number, and special character' },
+            })}
+          />
+          {errors.password && <span className="field-error">{errors.password.message}</span>}
+        </div>
+        <button type="submit" className="btn-auth-primary">
+          Sign up
+        </button>
+      </form>
+      <p className="auth-layout-footer">
+        Already have an account? <Link to="/login">Sign in</Link>
+      </p>
+    </AuthLayout>
   );
 }
