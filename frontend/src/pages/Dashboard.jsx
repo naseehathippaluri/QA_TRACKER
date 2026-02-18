@@ -5,6 +5,7 @@ import { Loading } from '../components/common/Loading';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardService, downloadExportBlob } from '../services/dashboard';
 import { authApi } from '../api/auth';
+import { getMaxDateString } from '../utils/dateUtils';
 
 export function Dashboard() {
   const { isAdmin } = useAuth();
@@ -110,6 +111,7 @@ export function Dashboard() {
           <input
             id="dashboard-date-from"
             type="date"
+            max={getMaxDateString()}
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
           />
@@ -119,6 +121,7 @@ export function Dashboard() {
           <input
             id="dashboard-date-to"
             type="date"
+            max={getMaxDateString()}
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
           />

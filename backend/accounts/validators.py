@@ -1,9 +1,38 @@
 """
-Security validators: password strength, email, input sanitization.
+Security validators: password strength, email, input sanitization, company email domain.
 """
 import re
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
+ALLOWED_EMAIL_DOMAIN = 'ideyalabs.com'
+
+
+def validate_company_email(email):
+    """
+    Reusable validator: only @ideyalabs.com emails are allowed.
+    Case-insensitive domain check. Raises ValidationError if domain is not allowed.
+    Use in signup serializer, login serializer, and any future user creation logic.
+    Superuser creation via Django admin / createsuperuser does not use this.
+    """
+    if not email or not isinstance(email, str):
+        raise ValidationError(
+            _('A valid email address is required.'),
+            code='invalid_email',
+        )
+    email = email.strip().lower()
+    if '@' not in email:
+        raise ValidationError(
+            _('Only ideyalabs.com company email addresses are allowed.'),
+            code='invalid_domain',
+        )
+    domain = email.split('@')[-1]
+    if domain != ALLOWED_EMAIL_DOMAIN:
+        raise ValidationError(
+            _('Only ideyalabs.com company email addresses are allowed.'),
+            code='invalid_domain',
+        )
+    return email
 
 
 # Password must: min 8 chars, uppercase, lowercase, number, special character

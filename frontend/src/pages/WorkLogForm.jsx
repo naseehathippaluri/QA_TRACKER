@@ -6,6 +6,7 @@ import { ErrorMessage } from '../components/common/ErrorMessage';
 import { worklogsService } from '../services/worklogs';
 import { featuresService } from '../services/features';
 import { Loading } from '../components/common/Loading';
+import { getMaxDateString, isFutureDate } from '../utils/dateUtils';
 
 const PROJECT_OPTIONS = [
   { value: '', label: 'Select project' },
@@ -110,6 +111,7 @@ export function WorkLogForm() {
         else if (d.project?.length) msg = d.project[0];
         else if (d.feature?.length) msg = d.feature[0];
         else if (d.date?.length) msg = d.date[0];
+        else if (d.date) msg = Array.isArray(d.date) ? d.date[0] : d.date;
         else {
           const firstKey = Object.keys(d).find((k) => Array.isArray(d[k]) && d[k].length);
           if (firstKey) msg = d[firstKey][0];
@@ -155,7 +157,15 @@ export function WorkLogForm() {
           </div>
           <div className="form-group">
             <label htmlFor="date">Date *</label>
-            <input id="date" type="date" {...register('date', { required: 'Required' })} />
+            <input
+              id="date"
+              type="date"
+              max={getMaxDateString()}
+              {...register('date', {
+                required: 'Required',
+                validate: (v) => !isFutureDate(v) || 'Future dates are not allowed.',
+              })}
+            />
             {errors.date && <span className="field-error">{errors.date.message}</span>}
           </div>
         </section>

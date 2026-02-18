@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { worklogsService } from '../services/worklogs';
 import { featuresService } from '../services/features';
 import { authApi } from '../api/auth';
+import { getMaxDateString } from '../utils/dateUtils';
 
 const PROJECT_OPTIONS = [
   { value: '', label: 'All projects' },
@@ -128,6 +129,7 @@ export function AllWorkLogs() {
           <label>Start Date</label>
           <input
             type="date"
+            max={getMaxDateString()}
             value={filters.date_from}
             onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))}
           />
@@ -136,6 +138,7 @@ export function AllWorkLogs() {
           <label>End Date</label>
           <input
             type="date"
+            max={getMaxDateString()}
             value={filters.date_to}
             onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))}
           />

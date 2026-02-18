@@ -5,6 +5,7 @@ import { Loading } from '../components/common/Loading';
 import { worklogsService } from '../services/worklogs';
 import { featuresService } from '../services/features';
 import { authApi } from '../api/auth';
+import { getMaxDateString } from '../utils/dateUtils';
 
 const PROJECT_OPTIONS = [
   { value: '', label: 'All projects' },
@@ -57,12 +58,14 @@ export function FilterWorkLogs() {
       <div className="filter-bar">
         <input
           type="date"
+          max={getMaxDateString()}
           value={filters.date_from}
           onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))}
           placeholder="From"
         />
         <input
           type="date"
+          max={getMaxDateString()}
           value={filters.date_to}
           onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))}
           placeholder="To"

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../components/common/Layout';
 import { Loading } from '../components/common/Loading';
 import { dashboardService } from '../services/dashboard';
+import { getMaxDateString } from '../utils/dateUtils';
 
 export function AdminDashboard() {
   const [summary, setSummary] = useState(null);
@@ -27,8 +28,8 @@ export function AdminDashboard() {
       <div className="page-header">
         <h1>Admin Dashboard</h1>
         <div className="filter-inline">
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} placeholder="From" />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} placeholder="To" />
+          <input type="date" max={getMaxDateString()} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} placeholder="From" />
+          <input type="date" max={getMaxDateString()} value={dateTo} onChange={(e) => setDateTo(e.target.value)} placeholder="To" />
         </div>
       </div>
       <div className="cards-grid">

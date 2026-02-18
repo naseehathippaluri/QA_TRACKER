@@ -1,16 +1,21 @@
 """
 Secure auth views: register (email, full_name, password only), login by email, refresh, logout (blacklist).
 """
+import logging
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from .serializers import RegisterSerializer, UserBriefSerializer
 from .services import get_user_by_email
+from .validators import validate_company_email
 from common.permissions import IsAdminUser
+
+logger = logging.getLogger(__name__)
 
 
 # Rate limiting for auth (prevent brute force). Use scope so DRF looks up DEFAULT_THROTTLE_RATES.
@@ -23,7 +28,7 @@ class RegisterThrottle(AnonRateThrottle):
 
 
 class LoginSerializer(serializers.Serializer):
-    """Accept email + password; return tokens + user (no user enumeration)."""
+    """Accept email + password; return tokens + user. Only @ideyalabs.com allowed."""
     email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True, style={'input_type': 'password'})
 
@@ -32,6 +37,13 @@ class LoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         if not email or not password:
             raise serializers.ValidationError('Email and password are required.')
+        try:
+            validate_company_email(email)
+        except DjangoValidationError:
+            logger.warning('Login attempt with non-company email: %s', email)
+            raise serializers.ValidationError({
+                'email': ['Only ideyalabs.com company email addresses are allowed.'],
+            })
         user = get_user_by_email(email)
         if not user or not user.check_password(password):
             raise serializers.ValidationError('Invalid email or password.')
@@ -55,6 +67,8 @@ class LoginView(generics.GenericAPIView):
         try:
             serializer.is_valid(raise_exception=True)
         except serializers.ValidationError as e:
+            if isinstance(e.detail, dict):
+                return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
             msg = e.detail[0] if isinstance(e.detail, list) else str(e.detail)
             if 'Invalid' in msg or 'disabled' in msg.lower():
                 return Response({'detail': 'Invalid email or password.'}, status=status.HTTP_401_UNAUTHORIZED)

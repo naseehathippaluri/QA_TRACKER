@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { ErrorMessage } from '../components/common/ErrorMessage';
+import { isCompanyEmail, COMPANY_EMAIL_MESSAGE } from '../utils/emailDomain';
 
 export function Signup() {
   const { register: registerUser, isAuthenticated } = useAuth();
@@ -64,8 +65,12 @@ export function Signup() {
               id="email"
               type="email"
               autoComplete="email"
-              {...register('email', { required: 'Email is required' })}
+              {...register('email', {
+                required: 'Email is required',
+                validate: (v) => isCompanyEmail(v) || COMPANY_EMAIL_MESSAGE,
+              })}
             />
+            <span className="form-hint">Only company email (@ideyalabs.com) allowed</span>
             {errors.email && <span className="field-error">{errors.email.message}</span>}
           </div>
           <div className="form-group">

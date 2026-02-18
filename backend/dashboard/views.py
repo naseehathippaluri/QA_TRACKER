@@ -4,14 +4,17 @@ Filters: date range, feature, user (Admin only).
 """
 from django.db.models import Sum, Count
 from django.http import HttpResponse
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from features.models import Feature
 from worklogs.models import WorkLog
+from features.models import Feature
 from common.permissions import IsAdminUser
+
+User = get_user_model()
 
 
 def _user_role(request):
@@ -59,11 +62,24 @@ class DashboardSummaryView(APIView):
             total_qa_review_tickets=Sum('retested_qa_review_tickets'),
             total_defects_raised=Sum('defects_raised'),
         )
-        total_features = Feature.objects.count()
-        if _user_role(request) != 'ADMIN':
+        # Total Features: when date range + user are selected, count only features created by
+        # that user in the selected date range (Feature.created_at). Otherwise use distinct
+        # features from work logs (e.g. when no date range or admin viewing all users).
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+        target_user_id = None
+        if _user_role(request) == 'ADMIN' and request.query_params.get('user'):
+            target_user_id = request.query_params.get('user')
+        else:
+            target_user_id = request.user.id
+        if target_user_id and date_from and date_to:
             total_features = Feature.objects.filter(
-                id__in=qs.values_list('feature_id', flat=True).distinct()
+                created_by_id=target_user_id,
+                created_at__date__gte=date_from,
+                created_at__date__lte=date_to,
             ).count()
+        else:
+            total_features = qs.values('feature_id').distinct().count()
         return Response({
             'total_features': total_features,
             'total_work_logs': agg['total_work_logs'] or 0,
@@ -106,7 +122,7 @@ class DashboardAnalyticsView(APIView):
 
 class DashboardAnalyticsSummaryView(APIView):
     """
-    GET /api/dashboard/analytics/summary - Aggregated totals for Analytics pie charts (Admin only).
+    GET /api/dashboard/analytics/summary - Aggregated totals (Admin only).
     Query params: date_from, date_to (optional: user).
     Returns: written, executed, passed, failed, defects.
     """
@@ -127,6 +143,75 @@ class DashboardAnalyticsSummaryView(APIView):
             'passed': agg['passed'] or 0,
             'failed': agg['failed'] or 0,
             'defects': agg['defects'] or 0,
+        })
+
+
+def _user_display_label(user):
+    """Return display label for user: full_name or email."""
+    try:
+        name = (user.profile.full_name or '').strip()
+        if name:
+            return name
+    except Exception:
+        pass
+    return getattr(user, 'email', '') or getattr(user, 'username', '') or f'User {user.id}'
+
+
+class DashboardAnalyticsByUserView(APIView):
+    """
+    GET /api/dashboard/analytics/by-user - Per-user aggregates for bar charts (Admin only).
+    Query params: date_from, date_to (optional: user).
+    Returns: test_cases_written_per_user, test_cases_execution_per_user, qa_review_tickets_per_user.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        qs = _worklog_queryset(request)
+        by_user = list(qs.values('user_id').annotate(
+            written=Sum('test_cases_written'),
+            executed=Sum('test_cases_executed'),
+            passed=Sum('test_cases_passed'),
+            failed=Sum('test_cases_failed'),
+            qa_review=Sum('retested_qa_review_tickets'),
+        ).order_by('user_id'))
+        if not by_user:
+            return Response({
+                'test_cases_written_per_user': [],
+                'test_cases_execution_per_user': [],
+                'qa_review_tickets_per_user': [],
+            })
+        user_ids = [r['user_id'] for r in by_user]
+        users = {u.id: u for u in User.objects.filter(id__in=user_ids).select_related('profile')}
+        test_cases_written_per_user = [
+            {
+                'user_id': r['user_id'],
+                'username': _user_display_label(users[r['user_id']]),
+                'count': r['written'] or 0,
+            }
+            for r in by_user
+        ]
+        test_cases_execution_per_user = [
+            {
+                'user_id': r['user_id'],
+                'username': _user_display_label(users[r['user_id']]),
+                'executed': r['executed'] or 0,
+                'passed': r['passed'] or 0,
+                'failed': r['failed'] or 0,
+            }
+            for r in by_user
+        ]
+        qa_review_tickets_per_user = [
+            {
+                'user_id': r['user_id'],
+                'username': _user_display_label(users[r['user_id']]),
+                'count': r['qa_review'] or 0,
+            }
+            for r in by_user
+        ]
+        return Response({
+            'test_cases_written_per_user': test_cases_written_per_user,
+            'test_cases_execution_per_user': test_cases_execution_per_user,
+            'qa_review_tickets_per_user': qa_review_tickets_per_user,
         })
 
 

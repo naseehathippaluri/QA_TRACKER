@@ -3,8 +3,10 @@ import apiClient from '../api/client';
 export const dashboardService = {
   summary: (params) => apiClient.get('/dashboard/summary', { params }),
   analytics: (params) => apiClient.get('/dashboard/analytics', { params }),
-  /** Aggregated totals for Analytics pie charts. Params: date_from, date_to (optional: user). */
+  /** Aggregated totals for Analytics. Params: date_from, date_to (optional: user). */
   analyticsSummary: (params) => apiClient.get('/dashboard/analytics/summary', { params }),
+  /** Per-user aggregates for Analytics bar charts. Params: date_from, date_to (optional: user). */
+  analyticsByUser: (params) => apiClient.get('/dashboard/analytics/by-user', { params }),
   /**
    * Export work logs to Excel. Admin only. Optional params: date_from, date_to, feature, user.
    * Returns blob; use downloadExportBlob to save as file.

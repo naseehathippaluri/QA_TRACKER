@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import WorkLog, PROJECT_CHOICES
 from .validators import validate_execution_breakdown
@@ -34,6 +35,10 @@ class WorkLogSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request:
             return data
+        today = timezone.now().date()
+        date = data.get('date') or (self.instance and getattr(self.instance, 'date', None))
+        if date and date > today:
+            raise serializers.ValidationError({'date': ['Future dates are not allowed.']})
         project = data.get('project') if 'project' in data else (getattr(self.instance, 'project', None) if self.instance else None)
         if not project or project not in VALID_PROJECTS:
             raise serializers.ValidationError({'project': ['Please select a project (TOO or TFA).']})

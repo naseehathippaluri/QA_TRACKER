@@ -3,10 +3,11 @@ Secure auth serializers: signup (email, full_name, password only), user represen
 Role is never accepted from client; QA_MEMBER assigned on signup only.
 """
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import UserProfile
-from .validators import validate_password_strength, sanitize_string
+from .validators import validate_password_strength, validate_company_email, sanitize_string
 from .services import create_qa_member_user
 
 User = get_user_model()
@@ -29,9 +30,16 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=8, style={'input_type': 'password'})
 
     def validate_email(self, value):
-        email = value.strip().lower()
+        email = (value or '').strip().lower()
+        try:
+            validate_company_email(email)
+        except DjangoValidationError as e:
+            msgs = getattr(e, 'messages', None) or [str(e)]
+            if not isinstance(msgs, list):
+                msgs = [msgs]
+            raise serializers.ValidationError({'email': msgs})
         if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError('A user with this email already exists.')
+            raise serializers.ValidationError({'email': ['A user with this email already exists.']})
         return email
 
     def validate_password(self, value):

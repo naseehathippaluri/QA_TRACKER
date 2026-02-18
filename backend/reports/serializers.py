@@ -2,6 +2,7 @@
 QA Report serializers with validation.
 """
 from rest_framework import serializers
+from django.utils import timezone
 from .models import QAReport
 from .validators import validate_execution_breakdown
 
@@ -26,6 +27,10 @@ class QAReportSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'user', 'user_username', 'project_name', 'created_at', 'updated_at')
 
     def validate(self, data):
+        today = timezone.now().date()
+        date = data.get('date') or (self.instance and getattr(self.instance, 'date', None))
+        if date and date > today:
+            raise serializers.ValidationError({'date': ['Future dates are not allowed.']})
         validate_execution_breakdown(data)
         user = self.context.get('request').user
         project = data.get('project') or (self.instance and self.instance.project)

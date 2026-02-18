@@ -6,6 +6,7 @@ import { ErrorMessage } from '../components/common/ErrorMessage';
 import { reportsApi } from '../api/reports';
 import { projectsApi } from '../api/projects';
 import { Loading } from '../components/common/Loading';
+import { getMaxDateString, isFutureDate } from '../utils/dateUtils';
 
 const defaultValues = {
   project: '',
@@ -86,7 +87,7 @@ export function ReportForm() {
       }
     } catch (err) {
       const d = err.response?.data;
-      setSubmitError(d?.errors?.non_field_errors?.[0] || d?.detail || 'Save failed');
+      setSubmitError(d?.errors?.non_field_errors?.[0] || d?.errors?.date?.[0] || (Array.isArray(d?.date) ? d.date[0] : d?.date) || d?.detail || 'Save failed');
     } finally {
       setSubmitting(false);
     }
@@ -116,7 +117,15 @@ export function ReportForm() {
             </div>
             <div className="form-group">
               <label htmlFor="date">Date *</label>
-              <input id="date" type="date" {...register('date', { required: 'Required' })} />
+              <input
+                id="date"
+                type="date"
+                max={getMaxDateString()}
+                {...register('date', {
+                  required: 'Required',
+                  validate: (v) => !isFutureDate(v) || 'Future dates are not allowed.',
+                })}
+              />
               {errors.date && <span className="field-error">{errors.date.message}</span>}
             </div>
           </div>

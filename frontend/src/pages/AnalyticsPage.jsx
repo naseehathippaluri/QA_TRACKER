@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/common/Layout';
 import { Loading } from '../components/common/Loading';
-import { AnalyticsPieChart } from '../components/charts/AnalyticsPieChart';
 import { dashboardService } from '../services/dashboard';
+import { authApi } from '../api/auth';
+import { getMaxDateString } from '../utils/dateUtils';
+import {
+  TestCasesWrittenBarChart,
+  TestCasesExecutionBarChart,
+  QAReviewTicketsBarChart,
+} from '../components/charts/AnalyticsBarCharts';
 
 function getCurrentMonthRange() {
   const now = new Date();
@@ -15,35 +21,45 @@ function getCurrentMonthRange() {
   };
 }
 
-const CHART_1_COLORS = { 'Test Cases Written': '#3B82F6', 'Test Cases Executed': '#6366F1' };
-const CHART_2_COLORS = { Passed: '#22C55E', Failed: '#EF4444' };
-const CHART_3_COLORS = { 'Defects Raised': '#F97316' };
-
 export function AnalyticsPage() {
   const defaultRange = getCurrentMonthRange();
   const [dateFrom, setDateFrom] = useState(defaultRange.date_from);
   const [dateTo, setDateTo] = useState(defaultRange.date_to);
-  const [appliedRange, setAppliedRange] = useState(defaultRange);
-  const [data, setData] = useState(null);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({ date_from: defaultRange.date_from, date_to: defaultRange.date_to, user: '' });
+  const [users, setUsers] = useState([]);
+  const [byUserData, setByUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    authApi
+      .users({ page_size: 100 })
+      .then((r) => {
+        const data = r.data;
+        const list = Array.isArray(data) ? data : (data?.results || []);
+        setUsers(list);
+      })
+      .catch(() => setUsers([]));
+  }, []);
 
   const fetchAnalytics = useCallback(() => {
     setLoading(true);
     setError(null);
     const params = {
-      date_from: appliedRange.date_from,
-      date_to: appliedRange.date_to,
+      date_from: appliedFilters.date_from,
+      date_to: appliedFilters.date_to,
     };
+    if (appliedFilters.user) params.user = appliedFilters.user;
     dashboardService
-      .analyticsSummary(params)
-      .then((r) => setData(r.data))
+      .analyticsByUser(params)
+      .then((r) => setByUserData(r.data))
       .catch((err) => {
         setError(err.response?.data?.detail || 'Failed to load analytics');
-        setData(null);
+        setByUserData(null);
       })
       .finally(() => setLoading(false));
-  }, [appliedRange.date_from, appliedRange.date_to]);
+  }, [appliedFilters.date_from, appliedFilters.date_to, appliedFilters.user]);
 
   useEffect(() => {
     fetchAnalytics();
@@ -51,20 +67,16 @@ export function AnalyticsPage() {
 
   const handleApply = (e) => {
     e.preventDefault();
-    setAppliedRange({ date_from: dateFrom, date_to: dateTo });
+    setAppliedFilters({ date_from: dateFrom, date_to: dateTo, user: selectedUser });
   };
 
-  const chart1Data = [
-    { name: 'Test Cases Written', value: data?.written ?? 0 },
-    { name: 'Test Cases Executed', value: data?.executed ?? 0 },
-  ];
-  const chart2Data = [
-    { name: 'Passed', value: data?.passed ?? 0 },
-    { name: 'Failed', value: data?.failed ?? 0 },
-  ];
-  const chart3Data = [{ name: 'Defects Raised', value: data?.defects ?? 0 }];
-
-  const hasAnyData = (data?.written ?? 0) + (data?.executed ?? 0) + (data?.passed ?? 0) + (data?.failed ?? 0) + (data?.defects ?? 0) > 0;
+  const writtenPerUser = byUserData?.test_cases_written_per_user ?? [];
+  const executionPerUser = byUserData?.test_cases_execution_per_user ?? [];
+  const qaReviewPerUser = byUserData?.qa_review_tickets_per_user ?? [];
+  const hasAnyData =
+    writtenPerUser.length > 0 ||
+    executionPerUser.some((r) => (r.executed || r.passed || r.failed) > 0) ||
+    qaReviewPerUser.some((r) => r.count > 0);
 
   return (
     <Layout>
@@ -79,6 +91,7 @@ export function AnalyticsPage() {
           <input
             id="analytics-start-date"
             type="date"
+            max={getMaxDateString()}
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
           />
@@ -88,9 +101,25 @@ export function AnalyticsPage() {
           <input
             id="analytics-end-date"
             type="date"
+            max={getMaxDateString()}
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
           />
+        </div>
+        <div className="filter-group">
+          <label htmlFor="analytics-user">User</label>
+          <select
+            id="analytics-user"
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
+            <option value="">All Users</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.full_name?.trim() || u.email || `User ${u.id}`}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="filter-group" style={{ alignSelf: 'flex-end' }}>
           <button type="submit" className="btn btn-primary">
@@ -105,18 +134,18 @@ export function AnalyticsPage() {
         <Loading />
       ) : !hasAnyData ? (
         <div className="analytics-empty muted">
-          No data for the selected date range. Adjust dates or add work logs.
+          No data for the selected date range and filters. Adjust dates or add work logs.
         </div>
       ) : (
-        <>
+        <div className="analytics-bar-charts">
           <div className="analytics-charts-row">
-            <AnalyticsPieChart title="Test Case Creation" data={chart1Data} colorMapping={CHART_1_COLORS} />
-            <AnalyticsPieChart title="Execution Results" data={chart2Data} colorMapping={CHART_2_COLORS} />
+            <TestCasesWrittenBarChart data={writtenPerUser} />
+            <TestCasesExecutionBarChart data={executionPerUser} />
           </div>
           <div className="analytics-charts-row analytics-charts-row-single">
-            <AnalyticsPieChart title="Defects Raised" data={chart3Data} colorMapping={CHART_3_COLORS} />
+            <QAReviewTicketsBarChart data={qaReviewPerUser} />
           </div>
-        </>
+        </div>
       )}
     </Layout>
   );

@@ -4,6 +4,7 @@ import { Layout } from '../components/common/Layout';
 import { Loading } from '../components/common/Loading';
 import { reportsApi } from '../api/reports';
 import { projectsApi } from '../api/projects';
+import { getMaxDateString } from '../utils/dateUtils';
 
 export function FilterReports() {
   const [reports, setReports] = useState([]);
@@ -37,12 +38,14 @@ export function FilterReports() {
       <div className="filter-bar">
         <input
           type="date"
+          max={getMaxDateString()}
           value={filters.date_from}
           onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))}
           placeholder="From"
         />
         <input
           type="date"
+          max={getMaxDateString()}
           value={filters.date_to}
           onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))}
           placeholder="To"

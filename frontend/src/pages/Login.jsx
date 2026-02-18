@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { ErrorMessage } from '../components/common/ErrorMessage';
+import { isCompanyEmail, COMPANY_EMAIL_MESSAGE } from '../utils/emailDomain';
 
 export function Login() {
   const { login, isAuthenticated } = useAuth();
@@ -21,11 +22,16 @@ export function Login() {
 
   const onSubmit = async (data) => {
     setApiError(null);
+    if (!isCompanyEmail(data.email)) {
+      setApiError(COMPANY_EMAIL_MESSAGE);
+      return;
+    }
     try {
       await login(data.email, data.password);
       navigate(from, { replace: true });
     } catch (err) {
-      setApiError(err.response?.data?.detail || 'Invalid email or password');
+      const d = err.response?.data;
+      setApiError(d?.email?.[0] || d?.detail || 'Invalid email or password');
     }
   };
 
@@ -42,8 +48,12 @@ export function Login() {
               id="email"
               type="email"
               autoComplete="email"
-              {...register('email', { required: 'Email is required' })}
+              {...register('email', {
+                required: 'Email is required',
+                validate: (v) => isCompanyEmail(v) || COMPANY_EMAIL_MESSAGE,
+              })}
             />
+            <span className="form-hint">Only company email (@ideyalabs.com) allowed</span>
             {errors.email && <span className="field-error">{errors.email.message}</span>}
           </div>
           <div className="form-group">
