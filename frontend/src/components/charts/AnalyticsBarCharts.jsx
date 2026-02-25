@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+import html2canvas from 'html2canvas';
 import {
   BarChart,
   Bar,
@@ -7,6 +9,24 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+
+async function downloadChartAsPng(cardEl, slug, dateFrom, dateTo) {
+  if (!cardEl) return;
+  const canvas = await html2canvas(cardEl, {
+    useCORS: true,
+    scale: 2,
+    backgroundColor: '#ffffff',
+    logging: false,
+    allowTaint: true,
+  });
+  const name = dateFrom && dateTo
+    ? `analytics-${slug}-${dateFrom}-to-${dateTo}.png`
+    : `analytics-${slug}.png`;
+  const link = document.createElement('a');
+  link.download = name;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
 
 const EXECUTED_COLOR = '#3B82F6';
 const PASSED_COLOR = '#22C55E';
@@ -40,15 +60,43 @@ const barLabelProps = {
   fill: 'var(--text, #334155)',
 };
 
+const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
 /**
  * Bar chart: Test Cases Written per user. One bar per user, value above bar.
  * Design: clean, no grid, numeric values above bars.
  */
-export function TestCasesWrittenBarChart({ data }) {
+export function TestCasesWrittenBarChart({ data, exportDateFrom, exportDateTo }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const slug = 'test-cases-written';
+
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      await downloadChartAsPng(cardRef.current, slug, exportDateFrom, exportDateTo);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (!data?.length) {
     return (
-      <div className="analytics-chart-card analytics-chart-card-clean">
-        <h3 className="analytics-chart-title">Test Cases Written Per User</h3>
+      <div className="analytics-chart-card analytics-chart-card-clean" ref={cardRef}>
+        <div className="analytics-chart-card-header">
+          <h3 className="analytics-chart-title">Test Cases Written Per User</h3>
+          <button type="button" className="btn btn-primary btn-download-graph" onClick={handleDownload} disabled={downloading}>
+            <DownloadIcon />
+            <span>{downloading ? 'Downloading…' : 'Download'}</span>
+          </button>
+        </div>
         <div className="analytics-chart-body">
           <div className="analytics-chart-empty">No data for the selected range.</div>
         </div>
@@ -58,8 +106,13 @@ export function TestCasesWrittenBarChart({ data }) {
   const chartData = data.map((d) => ({ username: d.username, count: d.count }));
 
   return (
-    <div className="analytics-chart-card analytics-chart-card-clean">
-      <h3 className="analytics-chart-title">Test Cases Written Per User</h3>
+    <div className="analytics-chart-card analytics-chart-card-clean" ref={cardRef}>
+      <div className="analytics-chart-card-header">
+        <h3 className="analytics-chart-title">Test Cases Written Per User</h3>
+        <button type="button" className="btn btn-primary btn-download-graph" onClick={handleDownload} disabled={downloading}>
+          <DownloadIcon /><span>{downloading ? 'Downloading…' : 'Download'}</span>
+        </button>
+      </div>
       <div className="analytics-chart-body">
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
           <BarChart data={chartData} margin={chartMargin} barCategoryGap="36%" barSize={28}>
@@ -78,11 +131,31 @@ export function TestCasesWrittenBarChart({ data }) {
  * Bar chart: Test Cases Execution per user. Three bars: Executed (blue), Passed (green), Failed (red).
  * Legend below, numeric value above each bar. Clean design, no grid.
  */
-export function TestCasesExecutionBarChart({ data }) {
+export function TestCasesExecutionBarChart({ data, exportDateFrom, exportDateTo }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const slug = 'test-cases-execution';
+
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      await downloadChartAsPng(cardRef.current, slug, exportDateFrom, exportDateTo);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (!data?.length) {
     return (
-      <div className="analytics-chart-card analytics-chart-card-clean">
-        <h3 className="analytics-chart-title">Test Cases Execution Per User</h3>
+      <div className="analytics-chart-card analytics-chart-card-clean" ref={cardRef}>
+        <div className="analytics-chart-card-header">
+          <h3 className="analytics-chart-title">Test Cases Execution Per User</h3>
+          <button type="button" className="btn btn-primary btn-download-graph" onClick={handleDownload} disabled={downloading}>
+            <DownloadIcon />
+            <span>{downloading ? 'Downloading…' : 'Download'}</span>
+          </button>
+        </div>
         <div className="analytics-chart-body">
           <div className="analytics-chart-empty">No data for the selected range.</div>
         </div>
@@ -91,8 +164,13 @@ export function TestCasesExecutionBarChart({ data }) {
   }
 
   return (
-    <div className="analytics-chart-card analytics-chart-card-clean">
-      <h3 className="analytics-chart-title">Test Cases Execution Per User</h3>
+    <div className="analytics-chart-card analytics-chart-card-clean" ref={cardRef}>
+      <div className="analytics-chart-card-header">
+        <h3 className="analytics-chart-title">Test Cases Execution Per User</h3>
+        <button type="button" className="btn btn-primary btn-download-graph" onClick={handleDownload} disabled={downloading}>
+          <DownloadIcon /><span>{downloading ? 'Downloading…' : 'Download'}</span>
+        </button>
+      </div>
       <div className="analytics-chart-body">
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
           <BarChart data={data} margin={chartMargin} barCategoryGap="22%" barGap={4} barSize={20}>
@@ -119,11 +197,31 @@ export function TestCasesExecutionBarChart({ data }) {
  * Bar chart: QA Review Tickets (Retested) per user. One bar per user, value above bar.
  * Clean design to match reference.
  */
-export function QAReviewTicketsBarChart({ data }) {
+export function QAReviewTicketsBarChart({ data, exportDateFrom, exportDateTo }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+  const slug = 'qa-review-tickets';
+
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      await downloadChartAsPng(cardRef.current, slug, exportDateFrom, exportDateTo);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (!data?.length) {
     return (
-      <div className="analytics-chart-card analytics-chart-card-clean">
-        <h3 className="analytics-chart-title">Retested QA Review Tickets</h3>
+      <div className="analytics-chart-card analytics-chart-card-clean" ref={cardRef}>
+        <div className="analytics-chart-card-header">
+          <h3 className="analytics-chart-title">Retested QA Review Tickets</h3>
+          <button type="button" className="btn btn-primary btn-download-graph" onClick={handleDownload} disabled={downloading}>
+            <DownloadIcon />
+            <span>{downloading ? 'Downloading…' : 'Download'}</span>
+          </button>
+        </div>
         <div className="analytics-chart-body">
           <div className="analytics-chart-empty">No data for the selected range.</div>
         </div>
@@ -133,8 +231,13 @@ export function QAReviewTicketsBarChart({ data }) {
   const chartData = data.map((d) => ({ username: d.username, count: d.count }));
 
   return (
-    <div className="analytics-chart-card analytics-chart-card-clean">
-      <h3 className="analytics-chart-title">Retested QA Review Tickets</h3>
+    <div className="analytics-chart-card analytics-chart-card-clean" ref={cardRef}>
+      <div className="analytics-chart-card-header">
+        <h3 className="analytics-chart-title">Retested QA Review Tickets</h3>
+        <button type="button" className="btn btn-primary btn-download-graph" onClick={handleDownload} disabled={downloading}>
+          <DownloadIcon /><span>{downloading ? 'Downloading…' : 'Download'}</span>
+        </button>
+      </div>
       <div className="analytics-chart-body">
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
           <BarChart data={chartData} margin={chartMargin} barCategoryGap="36%" barSize={28}>

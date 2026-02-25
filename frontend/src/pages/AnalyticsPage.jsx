@@ -82,7 +82,9 @@ export function AnalyticsPage() {
     <Layout>
       <div className="page-header">
         <h1>Analytics</h1>
-        <Link to="/dashboard" className="btn btn-secondary">Back to Dashboard</Link>
+        <div className="page-header-actions">
+          <Link to="/dashboard" className="btn btn-secondary">Back to Dashboard</Link>
+        </div>
       </div>
 
       <form className="analytics-filters filter-bar dashboard-filters" onSubmit={handleApply}>
@@ -139,11 +141,23 @@ export function AnalyticsPage() {
       ) : (
         <div className="analytics-bar-charts">
           <div className="analytics-charts-row">
-            <TestCasesWrittenBarChart data={writtenPerUser} />
-            <TestCasesExecutionBarChart data={executionPerUser} />
+            <TestCasesWrittenBarChart
+              data={writtenPerUser}
+              exportDateFrom={appliedFilters.date_from}
+              exportDateTo={appliedFilters.date_to}
+            />
+            <TestCasesExecutionBarChart
+              data={executionPerUser}
+              exportDateFrom={appliedFilters.date_from}
+              exportDateTo={appliedFilters.date_to}
+            />
           </div>
           <div className="analytics-charts-row analytics-charts-row-single">
-            <QAReviewTicketsBarChart data={qaReviewPerUser} />
+            <QAReviewTicketsBarChart
+              data={qaReviewPerUser}
+              exportDateFrom={appliedFilters.date_from}
+              exportDateTo={appliedFilters.date_to}
+            />
           </div>
         </div>
       )}
